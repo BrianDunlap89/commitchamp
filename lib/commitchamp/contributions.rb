@@ -15,7 +15,7 @@ module Commitchamp
     def user_input
       puts "Which organization's data would you like to access?: "
       @org = gets.chomp
-      puts "Which repository's?: "
+      puts "Which repository?: "
       @repo = gets.chomp
     end
 
@@ -24,6 +24,7 @@ module Commitchamp
       @contributions = Contributions.get("/repos/#{@org}/#{@repo}/stats/contributors", 
                          :headers => @auth)
       self.collect_data
+      self.sort_data
       self.display_data
     end
 
@@ -40,17 +41,38 @@ module Commitchamp
           d += week["d"]
           c += week["c"]
         end
-        @data.push([author, a, d, c])
+        @data.push({l: author, a: a, d: d, c: c})
       end
       @data
     end
    
+    def sort_data
+      puts "How would you like to sort contributors?: "
+      puts "Lines (a)dded"
+      puts "Lines (d)eleted"
+      puts "(c)ommits made"
+      input = gets.chomp.downcase
+      until ["a", "d", "c"].include?(input)
+        puts "Please provide a valid entry."
+        puts "(a)dded, (d)eleted, or (c)ommits"
+        input = gets.chomp.downcase
+      end
+      @sorted_data = @data.sort_by do |hash|
+        hash[input.to_sym]
+        end
+      @sorted_data.reverse!
+      binding.pry
+    end
+
     def display_data
-      sprintf("%13s %5s %5s %5s, Username, Additions, Deletions, Changes")
-      @data.each do |entry|
-        sprintf("%13s %5s %5s %5s, #{entry[0]}, #{entry[1]}, #{entry[2]}, #{entry[3]}")
+      printf("%-20s %-10s %-10s %-10s\n", "Username ", "Additions ", "Deletions ", "Commits")
+      @sorted_data.each do |entry|
+        printf("%-20s %-10s %-10s %-10s\n", "#{entry[:l]}", "#{entry[:a]}", "#{entry[:d]}", "#{entry[:c]}")
       end
     end
+
+    
+
 
   end
 end
